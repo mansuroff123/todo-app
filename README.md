@@ -40,13 +40,12 @@ todo-app/ (Root)
 1 Navigate to directory: `cd client` 📂  
 2 Install dependencies: `npm install` 📦  
 3 Start Development Server: `npm run dev` 🚀
-```
 
 
-```
+
+```bash
  cd client
  npm install
- npm run dev
 ```
 
 ## 📡 API Endpoints 📡
@@ -59,7 +58,7 @@ todo-app/ (Root)
 - POST `/` — Create a new task ➕
 - PATCH `/:id` — Update completion status ✅
 - POST `/share` — Share a task with another user 🤝
-- DELETE `/:id` — Remove a task (Owner only) 🗑️ \
+- DELETE `/:id` — Remove a task (Owner only) 🗑️
 
 ## ✨ Key Features
 
@@ -71,3 +70,4 @@ todo-app/ (Root)
 - **⚡ Real-time Notifications:** Instant alerts using WebSockets (Socket.io) when someone shares a task with you.
 
 - **⏰ Reliable Cron Jobs:** Background processing for checking reminders every minute without manual intervention.
+
