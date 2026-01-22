@@ -1,0 +1,78 @@
+datasource db {
+    provider = "mysql"
+    url      = env("DATABASE_URL")
+}
+
+generator client {
+    provider = "prisma-client-js"
+}
+
+model User {
+    id             Int      @id @default(autoincrement())
+    email          String   @unique
+    password       String
+    fullName       String?  @map("full_name")
+    telegramChatId String?  @unique @map("telegram_chat_id")
+    createdAt      DateTime @default(now()) @map("created_at")
+
+    ownedTodos  Todo[]  @relation("Owner")
+    sharedTodos Share[]
+}
+
+model Todo {
+    id           Int         @id @default(autoincrement())
+    title        String
+    description  String?     @db.Text
+    isCompleted  Boolean     @default(false) @map("is_completed")
+    isRepeatable Boolean     @default(false) @map("is_repeatable")
+    frequency    RepeatType?
+    remindAt     DateTime?   @map("remind_at")
+
+    ownerId Int  @map("owner_id")
+    owner   User @relation("Owner", fields: [ownerId], references: [id], onDelete: Cascade)
+
+    shares  Share[]
+    invites TodoInvite[]
+
+    createdAt DateTime @default(now()) @map("created_at")
+    updatedAt DateTime @updatedAt @map("updated_at")
+}
+
+model Share {
+    id        Int         @id @default(autoincrement())
+    todoId    Int         @map("todo_id")
+    userId    Int         @map("user_id")
+    status    ShareStatus @default(PENDING)
+    canEdit   Boolean     @default(false) @map("can_edit")
+    createdAt DateTime    @default(now()) @map("created_at")
+
+    todo Todo @relation(fields: [todoId], references: [id], onDelete: Cascade)
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@unique([todoId, userId])
+}
+
+model TodoInvite {
+    id        Int       @id @default(autoincrement())
+    todoId    Int       @map("todo_id")
+    token     String    @unique @default(uuid())
+    expiresAt DateTime? @map("expires_at")
+    maxUses   Int       @default(1) @map("max_uses")
+    usedCount Int       @default(0) @map("used_count")
+    createdAt DateTime  @default(now()) @map("created_at")
+
+    todo Todo @relation(fields: [todoId], references: [id], onDelete: Cascade)
+}
+
+enum ShareStatus {
+    PENDING
+    ACCEPTED
+    REJECTED
+}
+
+enum RepeatType {
+    HOURLY
+    DAILY
+    WEEKLY
+    MONTHLY
+}

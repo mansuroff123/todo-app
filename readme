@@ -1,0 +1,53 @@
+# 🚀 Todo Planner Monorepo 🚀
+
+A professional, full-stack task management system featuring real-time notifications, smart recurring tasks, and Telegram bot integration. This project is built using a monorepo structure. 🏗️
+
+## 🛠️ Tech Stack 🛠️
+- 🔹 **Frontend:** AstroJS 🚀, SolidJS 🟦, TypeScript ⌨️, TailwindCSS 🎨.
+- 🔹 **Backend:** Express.js 🚂, Node.js 🟢, TypeScript ⌨️.
+- 🔹 **Database:** MySQL 🐬, Prisma ORM 💎.
+- 🔹 **Services:** Socket.io (Real-time) 🔌, Node-cron (Automation) ⏰, Telegraf (Telegram Bot API) 🤖.
+
+## 📂 Project Structure 📂
+```plaintext
+todo-app/ (Root)
+├── 💻 server/         --> Backend (Express + Prisma)
+├── 🌐 client/         --> Frontend (Astro + SolidJS)
+├── 📜 .gitignore      --> Root git rules
+└── 📖 README.md       --> Documentation
+```
+
+## ⚙️ Backend Setup (Server) ⚙️
+1️⃣ Navigate to directory: `cd server` 📂  
+2️⃣ Install dependencies: `npm install` 📦  
+3️⃣ Configure Environment: Create a `.env` file and fill in the following: 📝
+- **PORT:** Server port (e.g., 5000) 🔌
+- **DATABASE_URL:** Your MySQL connection string 🐬
+- **JWT_SECRET:** Your private secret key 🔑
+- **TELEGRAM_BOT_TOKEN:** Token from BotFather 🤖  
+4️⃣ Initialize Database: 💎
+```bash
+ npx prisma db push
+ npx prisma generate
+```
+5️⃣ Start Development Server: `npm run dev` 🚀
+
+## 🎨 Frontend Setup (Client) 🎨
+1️⃣ Navigate to directory: `cd client` 📂  
+2️⃣ Install dependencies: `npm install` 📦  
+3️⃣ Start Development Server: `npm run dev` 🚀
+
+## 📡 API Endpoints 📡
+### 🔐 Authentication (/api/auth):
+- POST `/register` — Create a new account ✨
+- POST `/login` — Authenticate and receive JWT 🔑
+
+### 📅 Todo Management (/api/todo):
+- GET `/` — Fetch all personal and shared tasks 📝
+- POST `/` — Create a new task ➕
+- PATCH `/:id` — Update completion status ✅
+- POST `/share` — Share a task with another user 🤝
+- DELETE `/:id` — Remove a task (Owner only) 🗑️ \
+'through the features:
+to be continued...
+the rest of the document remains as provided.
