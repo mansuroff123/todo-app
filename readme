@@ -48,6 +48,13 @@ todo-app/ (Root)
 - PATCH `/:id` — Update completion status ✅
 - POST `/share` — Share a task with another user 🤝
 - DELETE `/:id` — Remove a task (Owner only) 🗑️ \
-'through the features:
-to be continued...
-the rest of the document remains as provided.
+
+## ✨ Key Features
+
+- **🔐 Robust Authentication:** Secure user registration and login using JWT (JSON Web Tokens) and Zod for strict input validation.
+- **📅 Smart Task Management:** Full CRUD operations for todos, including titles, detailed descriptions, and due dates.
+- **🔄 Flexible Recurring Tasks:** Built-in logic for recurring reminders: Hourly, Daily, Weekly, and Monthly.
+- **🤖 Telegram Bot Integration:** Automated reminders sent directly to your Telegram chat via a dedicated bot.
+- **🤝 Collaborative Sharing:** Share tasks with other users and manage permissions (view/edit).
+- **⚡ Real-time Notifications:** Instant alerts using WebSockets (Socket.io) when someone shares a task with you.
+- **⏰ Reliable Cron Jobs:** Background processing for checking reminders every minute without manual intervention.
