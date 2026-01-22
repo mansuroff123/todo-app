@@ -24,7 +24,11 @@ todo-app/ (Root)
 - **PORT:** Server port (e.g., 5000) 🔌
 - **DATABASE_URL:** Your MySQL connection string 🐬
 - **JWT_SECRET:** Your private secret key 🔑
-- **TELEGRAM_BOT_TOKEN:** Token from BotFather 🤖  
+- **TELEGRAM_BOT_TOKEN:** Token from BotFather 🤖
+```bash
+ cd server
+ npm install
+```
 4 Initialize Database: 💎
 ```bash
  npx prisma db push
@@ -36,6 +40,12 @@ todo-app/ (Root)
 1 Navigate to directory: `cd client` 📂  
 2 Install dependencies: `npm install` 📦  
 3 Start Development Server: `npm run dev` 🚀
+```
+
+```bash
+ cd server
+ npm install
+```
 
 ## 📡 API Endpoints 📡
 ### 🔐 Authentication (/api/auth):
@@ -57,4 +67,5 @@ todo-app/ (Root)
 - **🤖 Telegram Bot Integration:** Automated reminders sent directly to your Telegram chat via a dedicated bot.
 - **🤝 Collaborative Sharing:** Share tasks with other users and manage permissions (view/edit).
 - **⚡ Real-time Notifications:** Instant alerts using WebSockets (Socket.io) when someone shares a task with you.
+
 - **⏰ Reliable Cron Jobs:** Background processing for checking reminders every minute without manual intervention.
