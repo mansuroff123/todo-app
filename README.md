@@ -42,9 +42,11 @@ todo-app/ (Root)
 3 Start Development Server: `npm run dev` 🚀
 ```
 
-```bash
- cd server
+
+```
+ cd client
  npm install
+ npm run dev
 ```
 
 ## 📡 API Endpoints 📡
