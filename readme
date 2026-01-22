@@ -18,24 +18,24 @@ todo-app/ (Root)
 ```
 
 ## ⚙️ Backend Setup (Server) ⚙️
-1️⃣ Navigate to directory: `cd server` 📂  
-2️⃣ Install dependencies: `npm install` 📦  
-3️⃣ Configure Environment: Create a `.env` file and fill in the following: 📝
+1 Navigate to directory: `cd server` 📂  
+2 Install dependencies: `npm install` 📦  
+3 Configure Environment: Create a `.env` file and fill in the following: 📝
 - **PORT:** Server port (e.g., 5000) 🔌
 - **DATABASE_URL:** Your MySQL connection string 🐬
 - **JWT_SECRET:** Your private secret key 🔑
 - **TELEGRAM_BOT_TOKEN:** Token from BotFather 🤖  
-4️⃣ Initialize Database: 💎
+4 Initialize Database: 💎
 ```bash
  npx prisma db push
  npx prisma generate
 ```
-5️⃣ Start Development Server: `npm run dev` 🚀
+5 Start Development Server: `npm run dev` 🚀
 
 ## 🎨 Frontend Setup (Client) 🎨
-1️⃣ Navigate to directory: `cd client` 📂  
-2️⃣ Install dependencies: `npm install` 📦  
-3️⃣ Start Development Server: `npm run dev` 🚀
+1 Navigate to directory: `cd client` 📂  
+2 Install dependencies: `npm install` 📦  
+3 Start Development Server: `npm run dev` 🚀
 
 ## 📡 API Endpoints 📡
 ### 🔐 Authentication (/api/auth):
