@@ -1,0 +1,10 @@
+---
+import Layout from '../layouts/Layout.astro';
+import TodoList from '../components/TodoList';
+---
+
+<Layout title="Dashboard | TodoPlanner">
+  <div class="max-w-6xl mx-auto py-10 px-4">
+    <TodoList client:load />
+  </div>
+</Layout>

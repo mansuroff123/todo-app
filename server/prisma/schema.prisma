@@ -12,7 +12,7 @@ model User {
     email          String   @unique
     password       String
     fullName       String?  @map("full_name")
-    telegramChatId String?  @unique @map("telegram_chat_id")
+    telegramChatId String?  @map("telegram_chat_id") // telegram unique test qilish uchun vaqtinchalik olib tashlandi
     createdAt      DateTime @default(now()) @map("created_at")
 
     ownedTodos  Todo[]  @relation("Owner")

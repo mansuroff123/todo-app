@@ -3,9 +3,15 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
+
+// Route importlari
 import authRoutes from './routes/auth.routes.js';
+import todoRoutes from "./routes/todo.routes.js";
+import userRoutes from "./routes/user.routes.js"; // Buni qo'shdik
+
+// Lib/Cron importlari
 import { initCron } from './lib/cron.js';
-import todoRoutes from "./routes/todo.routes.js"
+import './lib/telegram.js'; // Bot ishga tushishi uchun import qilib qo'yamiz
 
 dotenv.config();
 
@@ -20,11 +26,12 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-// Routes
 app.use('/api/auth', authRoutes);
+
+app.use('/api/user', userRoutes); 
+
 app.use('/api/todo', todoRoutes);
 
-// WebSocket ulanishi
 io.on('connection', (socket) => {
   console.log('Foydalanuvchi ulandi:', socket.id);
 
@@ -38,7 +45,6 @@ io.on('connection', (socket) => {
   });
 });
 
-// Xizmatlarni ishga tushiramiz
 initCron();
 
 httpServer.listen(PORT, () => {

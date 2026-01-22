@@ -1,0 +1,20 @@
+---
+import Layout from '../layouts/Layout.astro';
+import RegisterForm from '../components/RegisterForm';
+---
+
+<Layout title="Registration | Todo App">
+  <div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4">
+    <div class="max-w-md w-full">
+      <div class="text-center mb-8">
+        <h1 class="text-3xl font-bold text-center text-blue-600 mb-8">Todo List</h1>
+      </div>
+
+      <RegisterForm client:load />
+
+      <p class="text-center text-gray-600 pt-5">
+        Do you have an account? <a href="/" class="text-blue-600 font-bold hover:underline">Login</a>
+      </p>
+    </div>
+  </div>
+</Layout>

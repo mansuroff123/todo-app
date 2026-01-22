@@ -1,5 +1,5 @@
 import { Response } from 'express';
-import { AuthRequest } from '../middleware/auth.js';
+import { AuthRequest } from '../middleware/auth.middleware';
 import prisma from '../lib/prisma.js';
 import { io } from '../index.js';
 
