@@ -16,9 +16,7 @@ const registerSchema = z.object({
     .string()
     .min(8, "Parol kamida 8 ta belgidan iborat bo'lishi kerak")
     .max(32, "Parol juda uzun")
-    .regex(/[A-Z]/, "Parolda kamida bitta katta harf bo'lishi kerak")
-    .regex(/[0-9]/, "Parolda kamida bitta raqam bo'lishi kerak")
-    .regex(/[^A-Za-z0-9]/, "Parolda kamida bitta maxsus belgi bo'lishi kerak (@, !, #, etc)"),
+    .regex(/[0-9]/, "Parolda kamida bitta raqam bo'lishi kerak"),
 
   fullName: z
     .string()
