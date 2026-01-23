@@ -74,7 +74,7 @@ export default function TodoList() {
     finalRemindAt.setHours(+h, +m, 0, 0);
 
     if (selectedDays().length === 0 && finalRemindAt < now) {
-      alert("You can’t set a reminder for a time that has already passed!");
+      alert("You can't set a reminder for a time that has already passed!");
       return;
     }
 
