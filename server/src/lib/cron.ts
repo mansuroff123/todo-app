@@ -6,10 +6,7 @@ let isRunning = false;
 
 export const initCron = () => {
   cron.schedule("* * * * *", async () => {
-    if (isRunning) {
-      console.warn("[NODE-CRON] Oldingi vazifa hali tugamagan, tashlab ketamiz...");
-      return;
-    }
+    if (isRunning) return;
 
     isRunning = true;
     const now = new Date();
@@ -30,19 +27,20 @@ export const initCron = () => {
       await Promise.allSettled(
         reminders.map(async (todo) => {
           try {
-            const currentDay = now.getDay() === 0 ? 7 : now.getDay();
-            
+            if (!todo.remindAt) return;
+
             if (todo.isRepeatable && todo.repeatDays) {
+              const currentDay = now.getDay() === 0 ? 7 : now.getDay();
               const allowedDays = todo.repeatDays.split(',').map(Number);
               
               if (allowedDays.includes(currentDay)) {
                 await sendNotification(
                   todo.owner.telegramId!,
-                  `⏰ **Eslatma**: "${todo.title}"\n\nBugun bajarishingiz kerak bo'lgan vazifa vaqti keldi!`
+                  `⏰ **Reminder**: "${todo.title}"\n\n${todo.description || ""}`
                 );
               }
 
-              const nextDay = new Date(todo.remindAt!);
+              const nextDay = new Date(todo.remindAt);
               nextDay.setDate(nextDay.getDate() + 1);
 
               await prisma.todo.update({
@@ -52,31 +50,28 @@ export const initCron = () => {
                   isNotified: false 
                 },
               });
-            } 
-            
-            else {
+            } else {
               await sendNotification(
                 todo.owner.telegramId!,
-                `⏰ **Eslatma**: "${todo.title}"\n\nUshbu vazifani bajarish vaqti bo'ldi!`
+                `⏰ **Reminder**: "${todo.title}"\n\n${todo.description || ""}`
               );
 
               await prisma.todo.update({
                 where: { id: todo.id },
-                data: { 
-                  isNotified: true,
-                },
+                data: { isNotified: true },
               });
             }
-
           } catch (taskError) {
-            console.error(`[NODE-CRON] Todo ID ${todo.id} xatosi:`, taskError);
+            console.error(`[CRON ERROR] ID: ${todo.id}`, taskError);
           }
         })
       );
     } catch (error) {
-      console.error("[NODE-CRON] Kritik xato:", error);
+      console.error("[CRON CRITICAL]", error);
     } finally {
       isRunning = false;
     }
+  }, {
+    timezone: "Asia/Tashkent"
   });
 };
