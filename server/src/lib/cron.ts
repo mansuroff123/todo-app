@@ -1,93 +1,81 @@
 import cron from "node-cron";
-import prisma from "./prisma.js";
+import prisma from './prisma.js';
 import { sendNotification } from "./telegram.js";
 
-/**
- * Flag to prevent overlapping executions.
- * If the previous task is still running, we skip the current minute.
- */
 let isRunning = false;
 
 export const initCron = () => {
-  // Har daqiqada bir marta ishga tushadi (* * * * *)
   cron.schedule("* * * * *", async () => {
     if (isRunning) {
-      console.warn("[NODE-CRON] Previous task is still running, skipping this minute...");
+      console.warn("[NODE-CRON] Oldingi vazifa hali tugamagan, tashlab ketamiz...");
       return;
     }
 
     isRunning = true;
-    console.log(`[NODE-CRON] Started checking reminders at: ${new Date().toISOString()}`);
+    const now = new Date();
 
     try {
-      const now = new Date();
-
-      // 1. Bazadan eslatma vaqti kelgan todo'larni olish
       const reminders = await prisma.todo.findMany({
         where: {
           remindAt: { lte: now },
           isCompleted: false,
-          owner: { telegramChatId: { not: null } },
+          isNotified: false,
+          owner: { telegramId: { not: null } },
         },
         include: { owner: true },
       });
 
-      if (reminders.length === 0) {
-        return;
-      }
+      if (reminders.length === 0) return;
 
-      // 2. Barcha eslatmalarni parallel ravishda qayta ishlash
-      // Promise.allSettled ishlatamizki, bitta xato boshqalarini to'xtatib qo'ymasin
       await Promise.allSettled(
         reminders.map(async (todo) => {
           try {
-            // Telegramga xabar yuborish
-            await sendNotification(
-              todo.owner.telegramChatId!,
-              `⏰ **Reminder**: "${todo.title}"\n\nIt's time to complete this task!`
-            );
-
-            let nextDate: Date | null = null;
-
-            // 3. Takrorlanuvchi vazifalar uchun keyingi vaqtni hisoblash
-            if (todo.isRepeatable && todo.frequency) {
-              nextDate = new Date(todo.remindAt!);
+            const currentDay = now.getDay() === 0 ? 7 : now.getDay();
+            
+            if (todo.isRepeatable && todo.repeatDays) {
+              const allowedDays = todo.repeatDays.split(',').map(Number);
               
-              switch (todo.frequency) {
-                case "HOURLY":
-                  nextDate.setHours(nextDate.getHours() + 1);
-                  break;
-                case "DAILY":
-                  nextDate.setDate(nextDate.getDate() + 1);
-                  break;
-                case "WEEKLY":
-                  nextDate.setDate(nextDate.getDate() + 7);
-                  break;
-                case "MONTHLY":
-                  nextDate.setMonth(nextDate.getMonth() + 1);
-                  break;
-                default:
-                  nextDate = null;
+              if (allowedDays.includes(currentDay)) {
+                await sendNotification(
+                  todo.owner.telegramId!,
+                  `⏰ **Eslatma**: "${todo.title}"\n\nBugun bajarishingiz kerak bo'lgan vazifa vaqti keldi!`
+                );
               }
+
+              const nextDay = new Date(todo.remindAt!);
+              nextDay.setDate(nextDay.getDate() + 1);
+
+              await prisma.todo.update({
+                where: { id: todo.id },
+                data: { 
+                  remindAt: nextDay,
+                  isNotified: false 
+                },
+              });
+            } 
+            
+            else {
+              await sendNotification(
+                todo.owner.telegramId!,
+                `⏰ **Eslatma**: "${todo.title}"\n\nUshbu vazifani bajarish vaqti bo'ldi!`
+              );
+
+              await prisma.todo.update({
+                where: { id: todo.id },
+                data: { 
+                  isNotified: true,
+                },
+              });
             }
 
-            // 4. Bazada vaqtni yangilash yoki tozalash
-            await prisma.todo.update({
-              where: { id: todo.id },
-              data: { remindAt: nextDate },
-            });
-
           } catch (taskError) {
-            console.error(`[NODE-CRON] Error processing Todo ID ${todo.id}:`, taskError);
+            console.error(`[NODE-CRON] Todo ID ${todo.id} xatosi:`, taskError);
           }
         })
       );
-
-      console.log(`[NODE-CRON] Successfully processed ${reminders.length} reminders.`);
     } catch (error) {
-      console.error("[NODE-CRON] Critical Error:", error);
+      console.error("[NODE-CRON] Kritik xato:", error);
     } finally {
-      // Har qanday holatda ham flagni false qilamiz
       isRunning = false;
     }
   });

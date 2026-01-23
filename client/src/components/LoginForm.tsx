@@ -8,6 +8,8 @@ export default function LoginForm() {
 
   const handleSubmit = async (e: Event) => {
     e.preventDefault();
+    if (loading()) return; // Takroriy bosishdan himoya
+    
     setLoading(true);
     try {
       const res = await api.post('/auth/login', { 
@@ -15,11 +17,16 @@ export default function LoginForm() {
         password: password() 
       });
       
+      // Tokenni saqlash
       localStorage.setItem('token', res.data.token);
+      
+      // Dashbordga o'tish (window.location o'rniga Astro loyihada sekinroq lekin ishonchli usul)
       alert('Xush kelibsiz, ' + res.data.user.fullName);
-      window.location.href = '/dashboard';
+      window.location.assign('/dashboard'); 
+      
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Xatolik yuz berdi');
+      // Backend'dan kelgan aniq xabar yoki default xabar
+      alert(err.response?.data?.message || 'Email yoki parol xato!');
     } finally {
       setLoading(false);
     }
@@ -30,21 +37,23 @@ export default function LoginForm() {
       <input 
         type="email" 
         placeholder="Email" 
+        required
         onInput={(e) => setEmail(e.currentTarget.value)} 
         class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
       />
       <input 
         type="password" 
         placeholder="Parol" 
+        required
         onInput={(e) => setPassword(e.currentTarget.value)} 
         class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
       />
       <button 
         disabled={loading()} 
         type="submit" 
-        class="bg-blue-600 text-white p-2 rounded hover:bg-blue-700 transition"
+        class={`bg-blue-600 text-white p-2 rounded hover:bg-blue-700 transition ${loading() ? 'opacity-50 cursor-not-allowed' : ''}`}
       >
-        {loading() ? 'Loading...' : 'Enter'}
+        {loading() ? 'Yuklanmoqda...' : 'Kirish'}
       </button>
     </form>
   );

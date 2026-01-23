@@ -1,24 +1,36 @@
-import { Response } from 'express';
-import { AuthRequest } from '../middleware/auth.middleware';
+import { Response, Request } from 'express';
 import prisma from '../lib/prisma.js';
 import { io } from '../index.js';
+import { ShareStatus } from '@prisma/client';
 
-// 1. Yangi Todo yaratish
+export interface AuthRequest extends Request {
+  user?: {
+    userId: number;
+    email: string;
+  };
+}
+
+
 export const createTodo = async (req: AuthRequest, res: Response) => {
   try {
-    const { title, description, remindAt } = req.body;
+    const { title, description, remindAt, isRepeatable, repeatDays } = req.body;
     const userId = req.user?.userId;
 
-    if (!userId) {
-      return res.status(401).json({ message: "Ruxsat yo'q" });
-    }
+    if (!userId) return res.status(401).json({ message: "Ruxsat yo'q" });
 
     const todo = await prisma.todo.create({
       data: {
         title,
         description,
+        isRepeatable: Boolean(isRepeatable),
+        // Array kelsa stringga o'giramiz, aks holda bazaga tushmaydi
+        repeatDays: Array.isArray(repeatDays) ? repeatDays.join(',') : (repeatDays || null),
         remindAt: remindAt ? new Date(remindAt) : null,
-        ownerId: userId
+        ownerId: userId,
+        isNotified: false
+      },
+      include: {
+        owner: { select: { id: true, fullName: true } }
       }
     });
 
@@ -28,27 +40,21 @@ export const createTodo = async (req: AuthRequest, res: Response) => {
   }
 };
 
-// 2. Foydalanuvchining barcha Todo'larini olish
+
 export const getMyTodos = async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user?.userId;
-
-    // TypeScript xatosini oldini olish uchun qat'iy check
-    if (typeof userId !== 'number') {
-      return res.status(401).json({ message: "Ruxsat yo'q" });
-    }
+    if (!userId) return res.status(401).json({ message: "Ruxsat yo'q" });
 
     const todos = await prisma.todo.findMany({
       where: {
         OR: [
           { ownerId: userId },
-          { shares: { some: { userId: userId } } } // 'sharedWith' o'rniga Prisma relation nomi
+          { shares: { some: { userId: userId, status: ShareStatus.ACCEPTED } } }
         ]
       },
       include: {
-        owner: {
-          select: { id: true, fullName: true, email: true }
-        },
+        owner: { select: { id: true, fullName: true, email: true } },
         shares: {
           include: {
             user: { select: { id: true, fullName: true } }
@@ -64,87 +70,155 @@ export const getMyTodos = async (req: AuthRequest, res: Response) => {
   }
 };
 
-// 3. Todo statusini yangilash
-export const updateTodoStatus = async (req: AuthRequest, res: Response) => {
+
+export const updateTodo = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const { isCompleted } = req.body;
+    const { title, description, isCompleted, remindAt, isRepeatable, repeatDays } = req.body;
     const userId = req.user?.userId;
 
     if (!userId) return res.status(401).json({ message: "Ruxsat yo'q" });
 
     const todoId = Number(id);
 
-    // Faqat owner yoki share qilingan user statusni o'zgartira oladi
-    const todo = await prisma.todo.update({
-      where: { id: todoId },
-      data: { isCompleted: Boolean(isCompleted) }
+    const existingTodo = await prisma.todo.findFirst({
+      where: {
+        id: todoId,
+        OR: [
+          { ownerId: userId },
+          { shares: { some: { userId: userId, canEdit: true, status: ShareStatus.ACCEPTED } } }
+        ]
+      }
     });
 
-    res.json(todo);
+    if (!existingTodo) return res.status(403).json({ message: "Ruxsat yo'q" });
+
+    const updatedTodo = await prisma.todo.update({
+      where: { id: todoId },
+      data: {
+        title: title ?? existingTodo.title,
+        description: description ?? existingTodo.description,
+        isCompleted: isCompleted !== undefined ? Boolean(isCompleted) : existingTodo.isCompleted,
+        isRepeatable: isRepeatable !== undefined ? Boolean(isRepeatable) : existingTodo.isRepeatable,
+        repeatDays: repeatDays !== undefined ? (Array.isArray(repeatDays) ? repeatDays.join(',') : repeatDays) : existingTodo.repeatDays,
+        remindAt: remindAt !== undefined ? (remindAt ? new Date(remindAt) : null) : existingTodo.remindAt,
+        isNotified: remindAt !== undefined ? false : existingTodo.isNotified
+      }
+    });
+
+    res.json(updatedTodo);
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// 4. Todo'ni boshqa foydalanuvchiga share qilish
-export const shareTodo = async (req: AuthRequest, res: Response) => {
+
+export const shareTodoByEmail = async (req: AuthRequest, res: Response) => {
   try {
-    const { todoId, targetUserId, canEdit } = req.body;
+    const { todoId, email, canEdit } = req.body;
     const currentUserId = req.user?.userId;
 
-    if (!currentUserId) return res.status(401).json({ message: "Ruxsat yo'q" });
+    const targetUser = await prisma.user.findUnique({ where: { email } });
+    if (!targetUser) return res.status(404).json({ message: "Foydalanuvchi topilmadi" });
 
-    const tId = Number(todoId);
-    const uId = Number(targetUserId);
-
-    // 1. Allaqachon share qilinganmi?
-    const existingShare = await prisma.share.findUnique({
-      where: {
-        todoId_userId: { todoId: tId, userId: uId }
-      }
-    });
-
-    if (existingShare) {
-      return res.status(400).json({ message: "Bu vazifa allaqachon ushbu foydalanuvchiga share qilingan" });
-    }
-
-    // 2. Share yaratish
-    const share = await prisma.share.create({
-      data: {
-        todoId: tId,
-        userId: uId,
+    const share = await prisma.share.upsert({
+      where: { todoId_userId: { todoId: Number(todoId), userId: targetUser.id } },
+      update: { canEdit: !!canEdit },
+      create: {
+        todoId: Number(todoId),
+        userId: targetUser.id,
         canEdit: !!canEdit,
-        status: 'PENDING'
+        status: ShareStatus.PENDING
       },
       include: { todo: true }
     });
 
-    // 3. Real-time xabar (WebSocket)
-    io.to(`user_${uId}`).emit('todo_shared', {
-      message: `Sizga yangi vazifa share qilindi: ${share.todo.title}`,
+    io.to(`user_${targetUser.id}`).emit('todo_shared', {
+      message: `${req.user?.email} sizga vazifa yubordi`,
       todoId: share.todoId
     });
 
-    res.status(200).json({ message: "Muvaffaqiyatli share qilindi", share });
+    res.json({ message: "Taklif yuborildi", share });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// 5. Todo'ni o'chirish
-export const deleteTodo = async (req: AuthRequest, res: Response) => {
+
+export const generateInviteLink = async (req: AuthRequest, res: Response) => {
   try {
-    const { id } = req.params;
+    const todoId = Number(req.params.id);
     const userId = req.user?.userId;
 
-    const todoId = Number(id);
+    const todo = await prisma.todo.findUnique({ where: { id: todoId } });
+    if (!todo || todo.ownerId !== userId) return res.status(403).json({ message: "Ruxsat yo'q" });
+
+    const existing = await prisma.todoInvite.findFirst({ where: { todoId } });
+    if (existing) return res.json({ token: existing.token });
+
+    const shortToken = Math.random().toString(36).substring(2, 8).toUpperCase();
+
+    const invite = await prisma.todoInvite.create({
+      data: { todoId, token: shortToken, maxUses: 99999 }
+    });
+
+    res.json({ token: invite.token });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
+export const acceptInvite = async (req: AuthRequest, res: Response) => {
+  try {
+    const { token } = req.params;
+    const userId = req.user?.userId;
+
+    // 1. Avval userId borligini tekshiramiz
+    if (!userId) return res.status(401).json({ message: "Ruxsat yo'q" });
+
+    // 2. Token orqali invite-ni qidiramiz
+    const invite = await prisma.todoInvite.findUnique({ 
+      where: { token: String(token) } // Tokenni aniq string ekanligini bildiramiz
+    });
+
+    if (!invite || invite.usedCount >= invite.maxUses) {
+      return res.status(400).json({ message: "Link yaroqsiz yoki ishlatish soni tugagan" });
+    }
+
+    // 3. Upsert mantiqi
+    await prisma.share.upsert({
+      where: { 
+        todoId_userId: { todoId: invite.todoId, userId: userId } 
+      },
+      update: { status: ShareStatus.ACCEPTED },
+      create: {
+        todoId: invite.todoId,
+        userId: userId,
+        status: ShareStatus.ACCEPTED,
+        canEdit: false
+      }
+    });
+
+    // 4. Sanagichni oshirish
+    await prisma.todoInvite.update({
+      where: { id: invite.id },
+      data: { usedCount: { increment: 1 } }
+    });
+
+    res.json({ message: "Qo'shildingiz", todoId: invite.todoId });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const deleteTodo = async (req: AuthRequest, res: Response) => {
+  try {
+    const todoId = Number(req.params.id);
+    const userId = req.user?.userId;
 
     const todo = await prisma.todo.findUnique({ where: { id: todoId } });
-
-    if (!todo || todo.ownerId !== userId) {
-      return res.status(403).json({ message: "O'chirishga ruxsat yo'q" });
-    }
+    if (!todo || todo.ownerId !== userId) return res.status(403).json({ message: "Ruxsat yo'q" });
 
     await prisma.todo.delete({ where: { id: todoId } });
     res.json({ message: "Vazifa o'chirildi" });

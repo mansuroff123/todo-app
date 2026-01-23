@@ -3,7 +3,14 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { z } from 'zod';
 import prisma from '../lib/prisma.js';
-import { Prisma } from '@prisma/client';
+
+
+export interface AuthRequest extends Request {
+  user?: {
+    userId: number;
+    email: string;
+  };
+}
 
 const registerSchema = z.object({
   email: z
@@ -21,34 +28,34 @@ const registerSchema = z.object({
   fullName: z
     .string()
     .min(3, "Ism-familiya juda qisqa")
-    .max(50)
-    .optional(),
+    .max(50),
 
-  telegramChatId: z
+  telegramId: z
     .string()
     .regex(/^\d+$/, "Telegram ID faqat raqamlardan iborat bo'lishi kerak")
     .optional(),
 });
 
+
 export const register = async (req: Request, res: Response) => {
   try {
     const validatedData = registerSchema.parse(req.body);
+    
+    // Parolni xavfsiz hash qilish
     const hashedPassword = await bcrypt.hash(validatedData.password, 12);
 
-    const createInput = {
-      email: validatedData.email,
-      password: hashedPassword,
-      fullName: validatedData.fullName,
-      telegramChatId: validatedData.telegramChatId,
-    } as Prisma.UserCreateInput;
-
     const user = await prisma.user.create({
-      data: createInput,
+      data: {
+        email: validatedData.email,
+        password: hashedPassword,
+        fullName: validatedData.fullName,
+        telegramId: validatedData.telegramId || null,
+      },
       select: { 
         id: true, 
         email: true, 
         fullName: true,
-        telegramChatId: true 
+        telegramId: true 
       }
     });
 
@@ -57,12 +64,15 @@ export const register = async (req: Request, res: Response) => {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ errors: error.flatten().fieldErrors });
     }
+    
     if (error.code === 'P2002') {
       return res.status(400).json({ message: "Bu email allaqachon ro'yxatdan o'tgan" });
     }
-    res.status(400).json({ message: error.message });
+    
+    res.status(500).json({ message: error.message });
   }
 };
+
 
 export const login = async (req: Request, res: Response) => {
   try {
@@ -72,21 +82,29 @@ export const login = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Email va parolni kiriting" });
     }
 
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await prisma.user.findUnique({ 
+      where: { email: email.toLowerCase().trim() } 
+    });
 
     if (!user || !(await bcrypt.compare(password, user.password))) {
       return res.status(401).json({ message: "Email yoki parol xato" });
     }
 
+
     const token = jwt.sign(
-      { userId: user.id }, 
-      process.env.JWT_SECRET || 'secret_key_123', 
+      { userId: user.id, email: user.email }, 
+      process.env.JWT_SECRET || 'fallback_secret_123', 
       { expiresIn: '24h' }
     );
 
     res.json({ 
       token, 
-      user: { id: user.id, email: user.email, fullName: user.fullName } 
+      user: { 
+        id: user.id, 
+        email: user.email, 
+        fullName: user.fullName,
+        telegramId: user.telegramId 
+      } 
     });
   } catch (error: any) {
     res.status(500).json({ message: error.message });

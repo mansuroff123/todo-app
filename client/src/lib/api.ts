@@ -1,16 +1,60 @@
 import axios from 'axios';
 
+// Backend manzili (Astroda import.meta.env ishlatiladi)
+const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:5000/api';
+
 const api = axios.create({
-  baseURL: 'http://localhost:5000/api',
+  baseURL: API_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
 });
 
-
+// Request Interceptor: Har bir so'rovga tokenni qo'shish
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token && config.headers) {
-    config.headers.Authorization = `Bearer ${token}`;
+  if (typeof window !== 'undefined') {
+    const token = localStorage.getItem('token');
+    if (token && config.headers) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
   }
   return config;
+}, (error) => {
+  return Promise.reject(error);
 });
+
+// Response Interceptor: Xatolarni markaziy boshqarish
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Token yaroqsiz bo'lsa, foydalanuvchini tozalash va login sahifasiga
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('token');
+        // window.location.href = '/login'; 
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
+/**
+ * Professional yondashuv: API metodlarini guruhlash
+ */
+export const todoApi = {
+  getAll: () => api.get('/todo'),
+  create: (data: { title: string; description?: string; remindAt?: string; isRepeatable?: boolean; repeatDays?: string }) => 
+    api.post('/todo', data),
+  update: (id: number, data: any) => api.patch(`/todo/${id}`, data),
+  delete: (id: number) => api.delete(`/todo/${id}`),
+  share: (data: { todoId: number; email: string; canEdit: boolean }) => 
+    api.post('/todo/share', data),
+};
+
+export const authApi = {
+  login: (credentials: any) => api.post('/auth/login', credentials),
+  register: (data: any) => api.post('/auth/register', data),
+  getMe: () => api.get('/user/me'),
+};
 
 export default api;

@@ -2,20 +2,31 @@ import { Router } from 'express';
 import { 
   createTodo, 
   getMyTodos, 
-  updateTodoStatus, 
-  shareTodo, 
+  updateTodo, 
+  shareTodoByEmail, 
+  generateInviteLink,
+  acceptInvite,
   deleteTodo 
 } from '../controllers/todo.controller.js';
-import { protect } from 'src/middleware/auth.middleware.js';
+import { protect } from '../middleware/auth.middleware.js';
 
 const router = Router();
 
-router.use(protect); // Barcha todo yo'nalishlari uchun tokenni majburiy qilish
+router.use(protect);
+
 
 router.post('/', createTodo);
 router.get('/', getMyTodos);
-router.patch('/:id', updateTodoStatus);
-router.post('/share', shareTodo);
-router.delete('/:id', deleteTodo);
+router.patch('/:id', updateTodo);
+router.delete('/:id', deleteTodo);    
+
+
+router.post('/share', shareTodoByEmail); 
+
+
+router.post('/:id/invite', generateInviteLink);
+
+
+router.post('/join/:token', acceptInvite);
 
 export default router;
