@@ -41,7 +41,6 @@ export const register = async (req: Request, res: Response) => {
   try {
     const validatedData = registerSchema.parse(req.body);
     
-    // Parolni xavfsiz hash qilish
     const hashedPassword = await bcrypt.hash(validatedData.password, 12);
 
     const user = await prisma.user.create({

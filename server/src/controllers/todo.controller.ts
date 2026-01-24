@@ -23,7 +23,6 @@ export const createTodo = async (req: AuthRequest, res: Response) => {
         title,
         description,
         isRepeatable: Boolean(isRepeatable),
-        // Array kelsa stringga o'giramiz, aks holda bazaga tushmaydi
         repeatDays: Array.isArray(repeatDays) ? repeatDays.join(',') : (repeatDays || null),
         remindAt: remindAt ? new Date(remindAt) : null,
         ownerId: userId,
@@ -93,16 +92,34 @@ export const updateTodo = async (req: AuthRequest, res: Response) => {
 
     if (!existingTodo) return res.status(403).json({ message: "Ruxsat yo'q" });
 
+    let finalIsCompleted = isCompleted !== undefined ? Boolean(isCompleted) : existingTodo.isCompleted;
+    let finalRemindAt = remindAt !== undefined ? (remindAt ? new Date(remindAt) : null) : existingTodo.remindAt;
+    
+    const willBeRepeatable = isRepeatable !== undefined ? Boolean(isRepeatable) : existingTodo.isRepeatable;
+
+    if (willBeRepeatable && isCompleted === true) {
+      finalIsCompleted = false;
+      
+      if (finalRemindAt) {
+        finalRemindAt = new Date(finalRemindAt);
+        finalRemindAt.setDate(finalRemindAt.getDate() + 1);
+      }
+    }
+    // ----------------------------
+
     const updatedTodo = await prisma.todo.update({
       where: { id: todoId },
       data: {
         title: title ?? existingTodo.title,
         description: description ?? existingTodo.description,
-        isCompleted: isCompleted !== undefined ? Boolean(isCompleted) : existingTodo.isCompleted,
-        isRepeatable: isRepeatable !== undefined ? Boolean(isRepeatable) : existingTodo.isRepeatable,
+        isCompleted: finalIsCompleted,
+        isRepeatable: willBeRepeatable,
         repeatDays: repeatDays !== undefined ? (Array.isArray(repeatDays) ? repeatDays.join(',') : repeatDays) : existingTodo.repeatDays,
-        remindAt: remindAt !== undefined ? (remindAt ? new Date(remindAt) : null) : existingTodo.remindAt,
-        isNotified: remindAt !== undefined ? false : existingTodo.isNotified
+        remindAt: finalRemindAt,
+        isNotified: (remindAt !== undefined || (willBeRepeatable && isCompleted === true)) ? false : existingTodo.isNotified
+      },
+      include: {
+        owner: { select: { id: true, fullName: true } }
       }
     });
 
@@ -174,12 +191,10 @@ export const acceptInvite = async (req: AuthRequest, res: Response) => {
     const { token } = req.params;
     const userId = req.user?.userId;
 
-    // 1. Avval userId borligini tekshiramiz
     if (!userId) return res.status(401).json({ message: "Ruxsat yo'q" });
 
-    // 2. Token orqali invite-ni qidiramiz
     const invite = await prisma.todoInvite.findUnique({ 
-      where: { token: String(token) } // Tokenni aniq string ekanligini bildiramiz
+      where: { token: String(token) }
     });
 
     if (!invite || invite.usedCount >= invite.maxUses) {
@@ -200,7 +215,6 @@ export const acceptInvite = async (req: AuthRequest, res: Response) => {
       }
     });
 
-    // 4. Sanagichni oshirish
     await prisma.todoInvite.update({
       where: { id: invite.id },
       data: { usedCount: { increment: 1 } }

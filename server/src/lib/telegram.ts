@@ -29,7 +29,7 @@ bot.start(async (ctx) => {
     });
 
     await ctx.reply(
-      "✅ Congratulations! Your account has been successfully linked. You will now receive task notifications."
+      "✅ Congratulations! Your account has been successfully connected. You will now receive task notifications."
     );
   } catch (error: any) {
     console.error('Bot Link Error:', error);

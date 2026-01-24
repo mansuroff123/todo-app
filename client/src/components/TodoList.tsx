@@ -140,7 +140,7 @@ export default function TodoList() {
       
       <Show when={activeShareTodo()}>
         <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div class="bg-white rounded-[2.5rem] p-10 w-full max-w-md shadow-2xl space-y-6">
+          <div class="bg-white rounded-[2.5rem] p-2 w-full max-w-md shadow-2xl space-y-6">
             <h2 class="text-2xl font-black">Share todo</h2>
             <input 
               type="email" 
@@ -162,7 +162,7 @@ export default function TodoList() {
         </div>
       </Show>
 
-      <div class="max-w-7xl mx-auto p-6 lg:p-12 space-y-10">
+      <div class="max-w-7xl mx-auto p-6 space-y-10">
         
         <header class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div>
@@ -190,7 +190,7 @@ export default function TodoList() {
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
           
-          <div class="lg:col-span-5 space-y-6">
+          <div class="lg:col-span-5 space-y-6 sticky">
             <div class="bg-white p-8 rounded-[3rem] border border-slate-200 shadow-sm sticky top-10">
               <h2 class="text-xl font-black mb-6 text-slate-800">{editingTodoId() ? 'Edit' : 'New Todo'}</h2>
               <form onSubmit={handleSave} class="space-y-6">

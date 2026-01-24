@@ -1,6 +1,5 @@
-// server/src/controllers/user.controller.ts
 import { Response } from 'express';
-import { AuthRequest } from './auth.controller.js'; // Interfeysni to'g'ri import qilish
+import { AuthRequest } from './auth.controller.js';
 import prisma from '../lib/prisma.js';
 
 
