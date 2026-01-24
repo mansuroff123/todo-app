@@ -96,7 +96,7 @@ export default function RegisterForm() {
           type="submit" 
           class={`w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 active:scale-95 transition-all cursor-pointer ${loading() ? 'opacity-50' : ''}`}
         >
-          {loading() ? "Yuklanmoqda..." : "Ro'yxatdan o'tish"}
+          {loading() ? "Loading..." : "Register"}
         </button>
       </form>
     </div>

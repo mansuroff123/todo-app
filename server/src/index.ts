@@ -30,22 +30,22 @@ app.use('/api/user', userRoutes);
 app.use('/api/todo', todoRoutes);
 
 io.on('connection', (socket) => {
-  console.log('Foydalanuvchi ulandi:', socket.id);
+  console.log('User connected:', socket.id);
 
   socket.on('join', (userId: string | number) => {
     socket.join(`user_${userId}`);
-    console.log(`Foydalanuvchi o'z xonasiga kirdi: user_${userId}`);
+    console.log(`user entered self room: user_${userId}`);
   });
 
   socket.on('disconnect', () => {
-    console.log('Foydalanuvchi uzildi');
+    console.log('User disconnected');
   });
 });
 
 initCron();
 
 httpServer.listen(PORT, () => {
-  console.log(`🚀 Server va WebSockets http://localhost:${PORT} da ishga tushdi`);
+  console.log(`🚀 Server and WebSockets http://localhost:${PORT}`);
 });
 
 export { io };

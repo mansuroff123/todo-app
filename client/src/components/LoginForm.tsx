@@ -8,7 +8,7 @@ export default function LoginForm() {
 
   const handleSubmit = async (e: Event) => {
     e.preventDefault();
-    if (loading()) return; // Takroriy bosishdan himoya
+    if (loading()) return;
     
     setLoading(true);
     try {
@@ -17,16 +17,13 @@ export default function LoginForm() {
         password: password() 
       });
       
-      // Tokenni saqlash
       localStorage.setItem('token', res.data.token);
       
-      // Dashbordga o'tish (window.location o'rniga Astro loyihada sekinroq lekin ishonchli usul)
-      alert('Xush kelibsiz, ' + res.data.user.fullName);
+      alert('Welcome, ' + res.data.user.fullName);
       window.location.assign('/dashboard'); 
       
     } catch (err: any) {
-      // Backend'dan kelgan aniq xabar yoki default xabar
-      alert(err.response?.data?.message || 'Email yoki parol xato!');
+      alert(err.response?.data?.message || 'Email or password wrong!');
     } finally {
       setLoading(false);
     }
@@ -53,7 +50,7 @@ export default function LoginForm() {
         type="submit" 
         class={`bg-blue-600 text-white p-2 rounded hover:bg-blue-700 transition ${loading() ? 'opacity-50 cursor-not-allowed' : ''}`}
       >
-        {loading() ? 'Yuklanmoqda...' : 'Kirish'}
+        {loading() ? 'Loading...' : 'Enter'}
       </button>
     </form>
   );
