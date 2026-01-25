@@ -14,7 +14,11 @@
     "@tailwindcss/vite": "^4.1.18",
     "astro": "^5.16.13",
     "axios": "^1.13.2",
+    "socket.io-client": "^4.8.3",
     "solid-js": "^1.9.10",
     "tailwindcss": "^4.1.18"
+  },
+  "devDependencies": {
+    "@types/socket.io-client": "^3.0.0"
   }
 }

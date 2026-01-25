@@ -1,6 +1,5 @@
 import axios from 'axios';
 
-// Backend manzili (Astroda import.meta.env ishlatiladi)
 const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:5000/api';
 
 const api = axios.create({
@@ -10,7 +9,6 @@ const api = axios.create({
   },
 });
 
-// Request Interceptor: Har bir so'rovga tokenni qo'shish
 api.interceptors.request.use((config) => {
   if (typeof window !== 'undefined') {
     const token = localStorage.getItem('token');
@@ -23,24 +21,19 @@ api.interceptors.request.use((config) => {
   return Promise.reject(error);
 });
 
-// Response Interceptor: Xatolarni markaziy boshqarish
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Token yaroqsiz bo'lsa, foydalanuvchini tozalash va login sahifasiga
       if (typeof window !== 'undefined') {
         localStorage.removeItem('token');
-        // window.location.href = '/login'; 
       }
     }
     return Promise.reject(error);
   }
 );
 
-/**
- * Professional yondashuv: API metodlarini guruhlash
- */
+
 export const todoApi = {
   getAll: () => api.get('/todo'),
   create: (data: { title: string; description?: string; remindAt?: string; isRepeatable?: boolean; repeatDays?: string }) => 

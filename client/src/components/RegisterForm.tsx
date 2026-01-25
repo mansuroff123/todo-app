@@ -1,5 +1,5 @@
 import { createSignal } from 'solid-js';
-import api from '../lib/api.ts'; // .ts kengaytmasini aniq ko'rsatish yaxshi amaliyot
+import api from '../lib/api.ts';
 
 export default function RegisterForm() {
   const [email, setEmail] = createSignal('');
@@ -12,7 +12,6 @@ export default function RegisterForm() {
     e.preventDefault();
     if (loading()) return;
 
-    // Oddiy frontend tekshiruvi (Backendga yukni kamaytirish uchun)
     if (fullName().length < 3) {
       setError("Ism-familiya kamida 3 ta belgidan iborat bo'lishi kerak");
       return;
@@ -28,14 +27,12 @@ export default function RegisterForm() {
         fullName: fullName()
       });
 
-      alert("Muvaffaqiyatli ro'yxatdan o'tdingiz! Endi tizimga kiring.");
-      window.location.href = '/'; // Login sahifasiga
+      alert("ro'yxatdan o'tdingiz! Endi tizimga kiring.");
+      window.location.href = '/';
     } catch (err: any) {
-      // Backend'dan keladigan murakkab xatolarni handle qilish
       const responseData = err.response?.data;
       
       if (responseData?.errors) {
-        // Zod flatten() xatolarini chiroyli ko'rsatish
         const firstErrorField = Object.keys(responseData.errors)[0];
         const firstErrorMessage = responseData.errors[firstErrorField][0];
         setError(`${firstErrorField}: ${firstErrorMessage}`);
@@ -49,7 +46,7 @@ export default function RegisterForm() {
 
   return (
     <div class="bg-white p-8 rounded-2xl shadow-xl border border-gray-100">
-      <h2 class="text-2xl font-bold mb-6 text-gray-800">Hisob yaratish</h2>
+      <h2 class="text-2xl font-bold mb-6 text-gray-800">Create account</h2>
       
       {error() && (
         <div class="bg-red-50 text-red-600 p-3 rounded-lg mb-4 text-sm font-medium border border-red-100">
@@ -59,13 +56,13 @@ export default function RegisterForm() {
 
       <form onSubmit={handleRegister} class="space-y-4">
         <div>
-          <label class="text-sm font-semibold text-gray-600 block mb-1">Ism-familiya</label>
+          <label class="text-sm font-semibold text-gray-600 block mb-1">Full name</label>
           <input 
             type="text" 
             required
             onInput={(e) => setFullName(e.currentTarget.value)}
             class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-            placeholder="Ali Valiyev"
+            placeholder="John Doe"
           />
         </div>
 
@@ -76,12 +73,12 @@ export default function RegisterForm() {
             required
             onInput={(e) => setEmail(e.currentTarget.value)}
             class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-            placeholder="misol@gmail.com"
+            placeholder="example@gmail.com"
           />
         </div>
 
         <div>
-          <label class="text-sm font-semibold text-gray-600 block mb-1">Parol</label>
+          <label class="text-sm font-semibold text-gray-600 block mb-1">Password</label>
           <input 
             type="password" 
             required

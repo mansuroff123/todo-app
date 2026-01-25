@@ -46,7 +46,7 @@ model Todo {
 
 model Share {
   id        Int          @id @default(autoincrement())
-  todoId    Int
+  todoId    Int          
   userId    Int
   canEdit   Boolean      @default(false)
   status    ShareStatus  @default(PENDING)
@@ -60,9 +60,9 @@ model Share {
 model TodoInvite {
   id         Int       @id @default(autoincrement())
   token      String    @unique
-  todoId     Int
+  todoId     Int       @unique
   todo       Todo      @relation(fields: [todoId], references: [id], onDelete: Cascade)
-  
+  canEdit   Boolean  @default(false)
   usedCount  Int       @default(0)
   maxUses    Int       @default(99999)
   createdAt  DateTime  @default(now())

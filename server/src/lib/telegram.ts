@@ -1,10 +1,12 @@
 import { Telegraf } from 'telegraf';
 import dotenv from 'dotenv';
 import prisma from './prisma.js';
+import { io } from '../index.js';
 
 dotenv.config();
 
-const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN || 'secret_token');
+const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN || '');
+
 
 bot.start(async (ctx) => {
   const payload = ctx.startPayload;
@@ -12,35 +14,50 @@ bot.start(async (ctx) => {
 
   if (!payload) {
     return ctx.reply(
-      "Welcome! To link your account, click the 'Connect Telegram' button in the Todo App dashboard."
+      "Xush kelibsiz! Hisobingizni bog'lash uchun Todo ilovangizdagi 'Connect Telegram' tugmasini bosing."
     );
   }
 
   const userId = parseInt(payload);
 
   if (isNaN(userId)) {
-    return ctx.reply("❌ Error: Invalid link format.");
+    return ctx.reply("❌ Xatolik: Noto'g'ri havoladan foydalandingiz.");
   }
 
   try {
-    await prisma.user.update({
+    const updatedUser = await prisma.user.update({
       where: { id: userId },
-      data: { telegramId: chatId }
+      data: { telegramId: chatId },
+      select: {
+        id: true,
+        fullName: true,
+        email: true,
+        telegramId: true
+      }
     });
 
+
+    io.to(`user_${userId}`).emit('telegram_connected', updatedUser);
+
     await ctx.reply(
-      "✅ Congratulations! Your account has been successfully connected. You will now receive task notifications."
+      `✅ Tabriklaymiz, ${updatedUser.fullName}! 
+Hozirgina hisobingiz muvaffaqiyatli bog'landi. 
+Endi vazifalaringiz haqidagi eslatmalarni shu yerda qabul qilasiz.`
     );
+
+    console.log(`[Telegram] User ${userId} successfully linked to ChatID ${chatId}`);
+
   } catch (error: any) {
     console.error('Bot Link Error:', error);
     
     if (error.code === 'P2025') {
-      return ctx.reply("❌ Error: User not found in the system.");
+      return ctx.reply("❌ Xatolik: Tizimda bunday foydalanuvchi topilmadi.");
     }
     
-    ctx.reply("❌ Error: A technical issue occurred while linking the account.");
+    ctx.reply("❌ Xatolik: Hisobni bog'lashda texnik muammo yuz berdi.");
   }
 });
+
 
 export const sendNotification = async (chatId: string, message: string) => {
   try {
@@ -52,6 +69,7 @@ export const sendNotification = async (chatId: string, message: string) => {
     );
   }
 };
+
 
 bot.launch().then(() => {
   console.log('🚀 Telegram Bot started successfully');
