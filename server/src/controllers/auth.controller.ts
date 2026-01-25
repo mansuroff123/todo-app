@@ -4,13 +4,13 @@ import jwt from 'jsonwebtoken';
 import { z } from 'zod';
 import prisma from '../lib/prisma.js';
 
-
 export interface AuthRequest extends Request {
   user?: {
     userId: number;
     email: string;
   };
 }
+const commonPasswords = ["12345678", "password123", "qwertyui", "123456789", "admin123"];
 
 const registerSchema = z.object({
   email: z
@@ -23,19 +23,17 @@ const registerSchema = z.object({
     .string()
     .min(8, "Parol kamida 8 ta belgidan iborat bo'lishi kerak")
     .max(32, "Parol juda uzun")
-    .regex(/[0-9]/, "Parolda kamida bitta raqam bo'lishi kerak"),
+    .regex(/[0-9]/, "Parolda kamida bitta raqam bo'lishi kerak")
+    .regex(/[a-zA-Z]/, "Parolda kamida bitta harf bo'lishi kerak")
+    .refine((val) => !commonPasswords.includes(val.toLowerCase()), {
+      message: "Bu parol juda oddiy, iltimos murakkabroq parol tanlang",
+    }),
 
   fullName: z
     .string()
     .min(3, "Ism-familiya juda qisqa")
     .max(50),
-
-  telegramId: z
-    .string()
-    .regex(/^\d+$/, "Telegram ID faqat raqamlardan iborat bo'lishi kerak")
-    .optional(),
 });
-
 
 export const register = async (req: Request, res: Response) => {
   try {
@@ -48,7 +46,6 @@ export const register = async (req: Request, res: Response) => {
         email: validatedData.email,
         password: hashedPassword,
         fullName: validatedData.fullName,
-        telegramId: validatedData.telegramId || null,
       },
       select: { 
         id: true, 
@@ -72,7 +69,6 @@ export const register = async (req: Request, res: Response) => {
   }
 };
 
-
 export const login = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
@@ -89,10 +85,9 @@ export const login = async (req: Request, res: Response) => {
       return res.status(401).json({ message: "Email yoki parol xato" });
     }
 
-
     const token = jwt.sign(
       { userId: user.id, email: user.email }, 
-      process.env.JWT_SECRET || 'fallback_secret_123', 
+      process.env.JWT_SECRET || 'secret_key_123', 
       { expiresIn: '24h' }
     );
 
